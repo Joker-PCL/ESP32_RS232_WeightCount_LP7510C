@@ -14,8 +14,6 @@
 
 unsigned long passed_previousTime = 0;
 
-bool total_update = false;
-
 void setup() {
   // initialize the LCD
   lcd.begin();
@@ -104,11 +102,20 @@ void mainLoop(void *val) {
     if (!min_weight && !max_weight) {
       setMinMax();
       lcd.clear();
-    } else if (!scr_main_state) {
+    }
+
+    if (!scr_main_state) {
       clearScreen(0);
       lcd.noBlink();
       lcd.setCursor(4, 0);
       lcd.print("<< READY >>");
+
+      String Total_SCR = "TOTAL: " + String(Total) + " PCS";
+      while (Total_SCR.length() < 20) Total_SCR += " ";
+      lcd.setCursor(0, 1);
+      lcd.print(Total_SCR);
+
+      lcd.setCursor(10, 3);
       lcd.setCursor(0, 2);
       lcd.print("MIN:" + String(min_weight));
       lcd.setCursor(10, 2);
@@ -227,20 +234,6 @@ float readSerial() {
     if ((millis() - passed_previousTime) > 500) {
       digitalWrite(LED_GREEN, LOW);
     }
-
-    // update screen
-    if (total_update) {
-      lcd.noBlink();
-      String Total_SCR = "TOTAL: " + String(Total) + " PCS";
-      while (Total_SCR.length() < 20) Total_SCR += " ";
-
-      lcd.setCursor(0, 1);
-      lcd.print(Total_SCR);
-      total_update = false;
-      lcd.setCursor(10, 3);
-      lcd.blink();
-    }
-
 
     //  check Serial Data cache
     if (Serial2.available()) {
