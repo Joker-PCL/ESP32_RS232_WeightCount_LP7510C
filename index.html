@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta
+      name="viewport"
+      content="width=device-width, height=device-height,initial-scale=1, minimum-scale=1, maximum-scale=1"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Kanit:wght@300&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65"
+      crossorigin="anonymous"
+    />
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4"
+      crossorigin="anonymous"
+    ></script>
+    <!-- Include the ECharts file you just downloaded -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.2/dist/echarts.min.js"></script>
+
+    <style>
+      * {
+        font-family: "Kanit", sans-serif;
+      }
+
+      .main-detail {
+        margin: 1rem 1rem 3rem 1rem;
+        padding: 2rem 1.5rem;
+        width: 650px;
+        justify-content: center;
+        /* border: 1px solid rgb(120, 118, 118); */
+        border-radius: 10px;
+      }
+
+      .main-detail {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 20px;
+        width: 80%;
+      }
+
+      .main-detail li {
+        list-style-type: none;
+      }
+
+      .detail-box1 {
+        background-color: rgba(120, 118, 118, 0.2);
+        padding: 2rem 1.5rem;
+        border-radius: 10px;
+      }
+
+      .detail-box2 {
+        padding: 0 1.5rem;
+      }
+
+      .machine-list li.machine-active {
+        background-color: hsla(240, 0%, 56%, 0.897);
+      }
+
+      .machine-list ul {
+        padding: 0;
+        display: grid;
+        grid-template-columns: auto auto auto;
+        gap: 15px;
+      }
+
+      .machine-list li {
+        cursor: pointer;
+        list-style-type: none;
+        background-color: #0f6efd;
+        padding: 8px 12px;
+        border-radius: 10px;
+        color: #fff;
+      }
+
+      #summary_container {
+        /* width: 100vw; */
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="navbar navbar-dark bg-primary p-1 fixed-top">
+      <div class="container-fluid">
+        <a class="navbar-brand fs-4 text-white text-center"
+          >IOT เครื่องนับแผงยา</a
+        >
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="offcanvas"
+          data-bs-target="#machine_canvas"
+          aria-controls="machine_canvas"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div
+          class="offcanvas offcanvas-end"
+          tabindex="-1"
+          id="machine_canvas"
+          aria-labelledby="machine_canvasLabel"
+        >
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title pb-0" id="machine_canvasLabel">
+              รายชื่อเครื่องจักร
+            </h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="offcanvas"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="offcanvas-body machine-list">
+            <ul>
+              <li data-machineName="Strip2" class="machine-active">
+                Strip2 <br />(รหัส 20102)
+              </li>
+              <li data-machineName="Strip3">Strip3 <br />(รหัส 20103)</li>
+              <li data-machineName="Strip4">Strip4 <br />(รหัส 20104)</li>
+              <li data-machineName="Strip5">Strip5 <br />(รหัส 20105)</li>
+              <li data-machineName="Strip6">Strip6 <br />(รหัส 20106)</li>
+              <li data-machineName="Blister1">Blister1 <br />(รหัส 20201)</li>
+              <li data-machineName="Blister2">Blister2 <br />(รหัส 20202)</li>
+              <li data-machineName="Blister3">Blister3 <br />(รหัส 20203)</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <div class="mt-5 pt-2 container-xxl">
+      <main id="main_container">
+        <div
+          class="mx-5 my-3 py-1 fs-4 bg-success rounded text-center text-white"
+          id="machine_name"
+        >
+          เครื่อง xxxxx
+        </div>
+
+        <div id="main_chart" style="width: 100%; height: 400px"></div>
+
+        <div class="container d-flex justify-content-center">
+          <div class="main-detail">
+            <div class="detail detail-box1 text-center">
+              <div>
+                <p>จำนวนชิ้นงานทั้งหมด</p>
+                <h1 id="total">x,xxx กล่อง</h1>
+                <p id="batch_size">จากเป้า x,xxx กล่อง</p>
+              </div>
+            </div>
+            <div class="detail-box2">
+              <div
+                class="fs-6 mb-2 p-1 bg-secondary rounded text-center text-white"
+                id="latest_information"
+              >
+                ข้อมูลล่าสุด dd/mm/yyyy, hh:mm:ss
+              </div>
+              <div class="mt-3 px-4">
+                <li id="product_name">ชื่อยา XXXX</li>
+                <li id="lot">เลขที่ผลิต: xxxxx</li>
+                <li id="period_time">
+                  เวลาผ่านไปแล้วในกะนี้: hh ชั่วโมง mm นาที
+                </li>
+                <li id="average">เฉลี่ย xx กล่อง ต่อ นาที</li>
+              </div>
+              <div
+                class="fs-6 mt-4 p-1 bg-secondary rounded text-center text-white"
+                id="time_finish"
+              >
+                จะเสร็จในอีก (โดยประมาณ): hh ชั่วโมง mm นาที
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <div id="summary_container">
+      <div id="summary_chart" style="width: 100vw; height: 90vh"></div>
+    </div>
+
+    <script>
+      const machine_canvasEl = new bootstrap.Offcanvas("#machine_canvas");
+      const main_container = document.getElementById("main_container");
+      const main_chart = echarts.init(document.getElementById("main_chart"));
+      const summary_container = document.getElementById("summary_container");
+      const summary_chart = echarts.init(document.getElementById("summary_chart"));
+
+      window.addEventListener('load', function() {
+
+      });
+      let dataObj = [
+        {
+          machineName: "Strip4",
+          batch_size: 9800,
+          dataArr: [
+            ["26/06/2023, 10:35:58", "31043", "FURIDE 500", "16"],
+            ["26/06/2023, 10:40:58", "31043", "FURIDE 500", "18"],
+            ["26/06/2023, 10:44:48", "31043", "FURIDE 500", "1"],
+            ["26/06/2023, 10:51:14", "31043", "FURIDE 500", "8"],
+            ["26/06/2023, 10:56:14", "31043", "FURIDE 500", "3"],
+            ["26/06/2023, 11:01:16", "31043", "FURIDE 500", "4"],
+            ["26/06/2023, 13:05:48", "31043", "FURIDE 500", "38"],
+            ["26/06/2023, 13:10:48", "31043", "FURIDE 500", "29"],
+            ["26/06/2023, 13:18:33", "31043", "FURIDE 500", "30"],
+            ["26/06/2023, 13:32:02", "31043", "FURIDE 500", "1"],
+            ["26/06/2023, 13:42:04", "31043", "FURIDE 500", "24"],
+            ["26/06/2023, 13:49:54", "31043", "FURIDE 500", "24"],
+            ["26/06/2023, 13:58:40", "31043", "FURIDE 500", "1"],
+            ["26/06/2023, 14:03:40", "31043", "FURIDE 500", "18"],
+            ["26/06/2023, 14:10:51", "31043", "FURIDE 500", "18"],
+            ["26/06/2023, 14:35:21", "31043", "FURIDE 500", "1"],
+            ["26/06/2023, 14:40:22", "31043", "FURIDE 500", "36"],
+            ["26/06/2023, 14:45:22", "31043", "FURIDE 500", "4"],
+            ["26/06/2023, 14:54:03", "31043", "FURIDE 500", "65"],
+            ["26/06/2023, 19:15:41", "31043", "FURIDE 500", "10"],
+          ],
+        },
+        {
+          machineName: "Blister3",
+          batch_size: 1750,
+          dataArr: [
+            ["27/06/2023, 15:58:24", "31128", "PAINDOL", "27"],
+            ["27/06/2023, 16:03:24", "31128", "PAINDOL", "10"],
+            ["27/06/2023, 16:08:26", "31128", "PAINDOL", "9"],
+            ["27/06/2023, 16:13:27", "31128", "PAINDOL", "9"],
+            ["27/06/2023, 16:18:27", "31128", "PAINDOL", "11"],
+            ["27/06/2023, 16:23:27", "31128", "PAINDOL", "11"],
+            ["27/06/2023, 16:28:27", "31128", "PAINDOL", "11"],
+            ["27/06/2023, 16:33:27", "31128", "PAINDOL", "10"],
+            ["27/06/2023, 16:42:30", "31128", "PAINDOL", "12"],
+            ["27/06/2023, 16:47:30", "31128", "PAINDOL", "22"],
+            ["27/06/2023, 16:52:32", "31128", "PAINDOL", "10"],
+            ["27/06/2023, 17:20:18", "31128", "PAINDOL", "1"],
+            ["27/06/2023, 17:25:18", "31128", "PAINDOL", "3"],
+            ["27/06/2023, 17:30:18", "31128", "PAINDOL", "16"],
+            ["27/06/2023, 17:37:49", "31128", "PAINDOL", "7"],
+            ["27/06/2023, 17:42:49", "31128", "PAINDOL", "14"],
+            ["27/06/2023, 17:47:51", "31128", "PAINDOL", "9"],
+            ["27/06/2023, 17:52:49", "31128", "PAINDOL", "2"],
+            ["27/06/2023, 17:57:49", "31128", "PAINDOL", "10"],
+            ["27/06/2023, 18:02:51", "31128", "PAINDOL", "16"],
+            ["27/06/2023, 18:07:51", "31128", "PAINDOL", "12"],
+            ["27/06/2023, 18:12:52", "31128", "PAINDOL", "10"],
+            ["27/06/2023, 18:17:52", "31128", "PAINDOL", "10"],
+            ["27/06/2023, 18:22:52", "31128", "PAINDOL", "12"],
+            ["27/06/2023, 18:27:52", "31128", "PAINDOL", "10"],
+            ["27/06/2023, 18:32:52", "31128", "PAINDOL", "12"],
+            ["27/06/2023, 18:37:53", "31128", "PAINDOL", "11"],
+            ["27/06/2023, 18:42:53", "31128", "PAINDOL", "11"],
+            ["27/06/2023, 18:47:53", "31128", "PAINDOL", "9"],
+            ["27/06/2023, 18:52:53", "31128", "PAINDOL", "9"],
+            ["27/06/2023, 18:57:53", "31128", "PAINDOL", "11"],
+            ["27/06/2023, 19:02:54", "31128", "PAINDOL", "10"],
+            ["27/06/2023, 19:07:53", "31128", "PAINDOL", "10"],
+            ["27/06/2023, 19:12:54", "31128", "PAINDOL", "10"],
+            ["27/06/2023, 19:17:54", "31128", "PAINDOL", "9"],
+            ["27/06/2023, 19:22:54", "31128", "PAINDOL", "14"],
+            ["27/06/2023, 19:27:54", "31128", "PAINDOL", "9"],
+            ["27/06/2023, 19:32:54", "31128", "PAINDOL", "10"],
+            ["27/06/2023, 19:37:54", "31128", "PAINDOL", "7"],
+            ["27/06/2023, 19:42:54", "31128", "PAINDOL", "4"],
+            ["27/06/2023, 19:47:54", "31128", "PAINDOL", "12"],
+            ["27/06/2023, 19:52:55", "31128", "PAINDOL", "9"],
+            ["27/06/2023, 19:57:55", "31128", "PAINDOL", "11"],
+            ["27/06/2023, 20:02:55", "31128", "PAINDOL", "7"],
+            ["27/06/2023, 20:07:55", "31128", "PAINDOL", "13"],
+            ["27/06/2023, 20:12:55", "31128", "PAINDOL", "10"],
+            ["27/06/2023, 20:17:56", "31128", "PAINDOL", "8"],
+            ["27/06/2023, 20:22:56", "31128", "PAINDOL", "8"],
+            ["27/06/2023, 20:27:56", "31128", "PAINDOL", "11"],
+            ["27/06/2023, 20:32:56", "31128", "PAINDOL", "10"],
+            ["27/06/2023, 20:37:56", "31128", "PAINDOL", "8"],
+            ["27/06/2023, 20:42:56", "31128", "PAINDOL", "7"],
+            ["27/06/2023, 20:47:57", "31128", "PAINDOL", "11"],
+            ["27/06/2023, 20:52:56", "31128", "PAINDOL", "5"],
+            ["27/06/2023, 22:11:56", "31128", "PAINDOL", "1"],
+            ["27/06/2023, 22:16:55", "31128", "PAINDOL", "1"],
+            ["27/06/2023, 22:21:54", "31128", "PAINDOL", "10"],
+            ["27/06/2023, 22:26:54", "31128", "PAINDOL", "9"],
+            ["27/06/2023, 22:31:54", "31128", "PAINDOL", "7"],
+            ["27/06/2023, 22:36:54", "31128", "PAINDOL", "14"],
+            ["27/06/2023, 22:41:54", "31128", "PAINDOL", "10"],
+            ["27/06/2023, 22:46:55", "31128", "PAINDOL", "10"],
+            ["27/06/2023, 22:51:55", "31128", "PAINDOL", "4"],
+            ["27/06/2023, 22:56:55", "31128", "PAINDOL", "11"],
+            ["27/06/2023, 23:01:55", "31128", "PAINDOL", "8"],
+            ["27/06/2023, 23:06:55", "31128", "PAINDOL", "10"],
+            ["27/06/2023, 23:11:55", "31128", "PAINDOL", "19"],
+            ["27/06/2023, 23:16:55", "31128", "PAINDOL", "14"],
+            ["27/06/2023, 23:21:56", "31128", "PAINDOL", "13"],
+            ["27/06/2023, 23:26:56", "31128", "PAINDOL", "11"],
+            ["27/06/2023, 23:31:56", "31128", "PAINDOL", "9"],
+            ["27/06/2023, 23:36:56", "31128", "PAINDOL", "12"],
+            ["27/06/2023, 23:41:56", "31128", "PAINDOL", "10"],
+            ["27/06/2023, 23:46:57", "31128", "PAINDOL", "8"],
+            ["27/06/2023, 23:51:57", "31128", "PAINDOL", "9"],
+            ["27/06/2023, 23:56:57", "31128", "PAINDOL", "11"],
+            ["28/06/2023, 00:01:57", "31128", "PAINDOL", "11"],
+            ["28/06/2023, 00:06:57", "31128", "PAINDOL", "10"],
+            ["28/06/2023, 00:11:58", "31128", "PAINDOL", "11"],
+            ["28/06/2023, 00:16:58", "31128", "PAINDOL", "9"],
+            ["28/06/2023, 00:21:59", "31128", "PAINDOL", "10"],
+            ["28/06/2023, 00:26:58", "31128", "PAINDOL", "14"],
+            ["28/06/2023, 00:31:58", "31128", "PAINDOL", "9"],
+            ["28/06/2023, 00:36:59", "31128", "PAINDOL", "9"],
+            ["28/06/2023, 00:41:59", "31128", "PAINDOL", "1"],
+            ["28/06/2023, 00:46:59", "31128", "PAINDOL", "12"],
+            ["28/06/2023, 00:51:59", "31128", "PAINDOL", "10"],
+            ["28/06/2023, 00:57:00", "31128", "PAINDOL", "9"],
+            ["28/06/2023, 01:02:00", "31128", "PAINDOL", "11"],
+            ["28/06/2023, 01:06:59", "31128", "PAINDOL", "10"],
+            ["28/06/2023, 01:11:59", "31128", "PAINDOL", "11"],
+            ["28/06/2023, 01:17:00", "31128", "PAINDOL", "11"],
+            ["28/06/2023, 01:22:00", "31128", "PAINDOL", "9"],
+            ["28/06/2023, 01:27:00", "31128", "PAINDOL", "9"],
+            ["28/06/2023, 01:32:00", "31128", "PAINDOL", "4"],
+            ["28/06/2023, 01:43:04", "31128", "PAINDOL", "1"],
+            ["28/06/2023, 01:48:05", "31128", "PAINDOL", "10"],
+            ["28/06/2023, 01:53:04", "31128", "PAINDOL", "4"],
+            ["28/06/2023, 02:39:24", "31128", "PAINDOL", "1"],
+            ["28/06/2023, 02:44:24", "31128", "PAINDOL", "8"],
+            ["28/06/2023, 02:49:27", "31128", "PAINDOL", "13"],
+            ["28/06/2023, 02:54:25", "31128", "PAINDOL", "8"],
+            ["28/06/2023, 02:59:24", "31128", "PAINDOL", "11"],
+            ["28/06/2023, 03:04:25", "31128", "PAINDOL", "12"],
+            ["28/06/2023, 03:09:25", "31128", "PAINDOL", "9"],
+            ["28/06/2023, 03:14:27", "31128", "PAINDOL", "10"],
+            ["28/06/2023, 03:19:27", "31128", "PAINDOL", "11"],
+            ["28/06/2023, 03:24:27", "31128", "PAINDOL", "3"],
+            ["28/06/2023, 03:29:33", "31128", "PAINDOL", "10"],
+            ["28/06/2023, 03:34:26", "31128", "PAINDOL", "10"],
+            ["28/06/2023, 03:39:28", "31128", "PAINDOL", "11"],
+            ["28/06/2023, 03:44:26", "31128", "PAINDOL", "13"],
+            ["28/06/2023, 03:49:26", "31128", "PAINDOL", "10"],
+            ["28/06/2023, 03:54:26", "31128", "PAINDOL", "9"],
+            ["28/06/2023, 03:59:27", "31128", "PAINDOL", "11"],
+            ["28/06/2023, 04:04:27", "31128", "PAINDOL", "9"],
+            ["28/06/2023, 04:09:27", "31128", "PAINDOL", "11"],
+            ["28/06/2023, 04:14:27", "31128", "PAINDOL", "9"],
+            ["28/06/2023, 04:19:28", "31128", "PAINDOL", "8"],
+            ["28/06/2023, 04:24:28", "31128", "PAINDOL", "9"],
+            ["28/06/2023, 04:29:28", "31128", "PAINDOL", "11"],
+            ["28/06/2023, 04:34:28", "31128", "PAINDOL", "10"],
+            ["28/06/2023, 04:39:31", "31128", "PAINDOL", "14"],
+            ["28/06/2023, 04:44:28", "31128", "PAINDOL", "12"],
+            ["28/06/2023, 04:49:28", "31128", "PAINDOL", "10"],
+            ["28/06/2023, 04:54:28", "31128", "PAINDOL", "10"],
+            ["28/06/2023, 04:59:28", "31128", "PAINDOL", "10"],
+            ["28/06/2023, 05:04:29", "31128", "PAINDOL", "4"],
+            ["28/06/2023, 05:09:29", "31128", "PAINDOL", "2"],
+            ["28/06/2023, 05:14:30", "31128", "PAINDOL", "11"],
+            ["28/06/2023, 05:19:29", "31128", "PAINDOL", "10"],
+            ["28/06/2023, 05:24:30", "31128", "PAINDOL", "9"],
+            ["28/06/2023, 05:29:30", "31128", "PAINDOL", "11"],
+            ["28/06/2023, 05:34:30", "31128", "PAINDOL", "8"],
+            ["28/06/2023, 05:39:30", "31128", "PAINDOL", "10"],
+            ["28/06/2023, 05:44:30", "31128", "PAINDOL", "9"],
+            ["28/06/2023, 05:49:30", "31128", "PAINDOL", "12"],
+            ["28/06/2023, 05:54:31", "31128", "PAINDOL", "8"],
+          ],
+        },
+      ];
+
+      let dataObj2 =
+        [{
+          machineName: "Strip6",
+          batch_size: 7800,
+          dataArr: [
+            ["26/06/2023, 10:35:58", "31043", "FURIDE 500", "16"],
+            ["26/06/2023, 10:40:58", "31043", "FURIDE 500", "18"],
+            ["26/06/2023, 10:44:48", "31043", "FURIDE 500", "1"],
+            ["26/06/2023, 10:51:14", "31043", "FURIDE 500", "8"],
+            ["26/06/2023, 10:56:14", "31043", "FURIDE 500", "3"],
+            ["26/06/2023, 11:01:16", "31043", "FURIDE 500", "4"],
+            ["26/06/2023, 13:05:48", "31043", "FURIDE 500", "38"],
+            ["26/06/2023, 13:10:48", "31043", "FURIDE 500", "29"],
+            ["26/06/2023, 13:18:33", "31043", "FURIDE 500", "30"],
+            ["26/06/2023, 13:32:02", "31043", "FURIDE 500", "1"],
+            ["26/06/2023, 13:42:04", "31043", "FURIDE 500", "24"],
+            ["26/06/2023, 13:49:54", "31043", "FURIDE 500", "24"],
+            ["26/06/2023, 13:58:40", "31043", "FURIDE 500", "1"],
+            ["26/06/2023, 14:03:40", "31043", "FURIDE 500", "18"],
+            ["26/06/2023, 14:10:51", "31043", "FURIDE 500", "18"],
+            ["26/06/2023, 14:35:21", "31043", "FURIDE 500", "1"],
+            ["26/06/2023, 14:40:22", "31043", "FURIDE 500", "36"],
+            ["26/06/2023, 14:45:22", "31043", "FURIDE 500", "4"],
+            ["26/06/2023, 14:54:03", "31043", "FURIDE 500", "65"],
+            ["26/06/2023, 19:15:41", "31043", "FURIDE 500", "10"],
+          ],
+        }];
+    </script>
+
+    <script type="text/javascript">
+      let option = {
+        dataZoom: [
+          {
+            type: "inside",
+          },
+        ],
+        tooltip: {
+          trigger: "axis",
+          axisPointer: {
+            type: "cross",
+            crossStyle: {
+              color: "#999",
+            },
+          },
+        },
+        xAxis: [
+          {
+            type: "category",
+            axisPointer: {
+              type: "shadow",
+            },
+          },
+        ],
+        yAxis: [
+          {
+            type: "value",
+            name: "จำนวน",
+          },
+          {
+            type: "value",
+            name: "จำนวนสะสม",
+            boundaryGap: [0, "100%"],
+            splitLine: {
+              show: false,
+            },
+          },
+        ],
+        series: [
+          {
+            name: "จำนวน",
+            type: "bar",
+            itemStyle: {
+              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                { offset: 0, color: "#83bff6" },
+                { offset: 0.9, color: "#188df0" },
+                { offset: 1, color: "#188df0" },
+              ]),
+            },
+            tooltip: {
+              valueFormatter: function (value) {
+                return value;
+              },
+            },
+          },
+          {
+            name: "จำนวนสะสม",
+            type: "line",
+            yAxisIndex: 1,
+            symbol: "none",
+            lineStyle: {
+              color: "red",
+              width: 1,
+            },
+            tooltip: {
+              valueFormatter: function (value) {
+                return value;
+              },
+            },
+          },
+        ],
+
+        animationDuration: 2000,
+        animationDurationUpdate: 500,
+        animationEasing: "linear",
+        animationEasingUpdate: "linear",
+      };
+
+      main_chart.setOption(option);
+
+      let summary_option = {
+        visualMap: {
+          orient: "horizontal",
+          left: "center",
+          min: 0,
+          max: 100,
+          text: ["100", "0"],
+          dimension: 0,
+          inRange: {
+            color: ["#FD665F", "#FFCE34", "#65B581"],
+          },
+        },
+        grid: { containLabel: true },
+        xAxis: {
+          name: "เปอร์เซ็นต์",
+          min: 0,
+          max: 100,
+        },
+        yAxis: {
+          type: "category",
+        },
+        series: [
+          {
+            type: "bar",
+            label: {
+              show: true,
+              position: "right",
+              fontSize: 16,
+              formatter: "ผลิตไปแล้ว \n {c|{c}} %",
+              backgroundColor: "rgb(242,242,242)",
+              borderColor: "#aaa",
+              borderWidth: 1,
+              borderRadius: 4,
+              padding: [5, 10],
+              lineHeight: 20,
+              rich: {
+                c: {
+                  align: "center",
+                  color: "#ff8811",
+                  textBorderColor: "#000",
+                  textBorderWidth: 1,
+                  fontSize: 16,
+                },
+              },
+            },
+          },
+        ],
+        legend: {
+          show: true,
+        },
+
+        animationDuration: 2000,
+        animationDurationUpdate: 500,
+        animationEasing: "linear",
+        animationEasingUpdate: "linear",
+      };
+
+      summary_chart.setOption(summary_option);
+
+      window.addEventListener("resize", function () {
+        main_chart.resize();
+        summary_chart.resize();
+      });
+    </script>
+
+    <script type="text/javascript">
+      const machine_list = document.querySelectorAll(".machine-list li");
+      let machineName;
+
+      let xAxis = []; // เก็บข้อมูล วันที่
+      let seriesBar = []; // เก็บข้อมูลผลผลิตแต่ล่ะรอบ **รอบล่ะ 5 นาที
+      let seriesLine = []; // เก็บข้อมูลผลผลิตสะสม
+      let datetime, lot, productName, amount;
+      let summary_machine = [];
+
+      function mainChart(machineName, batch_size, dataArr) {
+        xAxis = []; // เก็บข้อมูล วันที่
+        seriesBar = []; // เก็บข้อมูลผลผลิตแต่ล่ะรอบ **รอบล่ะ 5 นาที
+        seriesLine = []; // เก็บข้อมูลผลผลิตสะสม
+
+        document.getElementById("machine_name").innerHTML = "เครื่อง " + machineName;
+
+        let sum = 0;
+        dataArr.forEach((data) => {
+          datetime = data[0];
+          lot = data[1];
+          productName = data[2];
+          amount = parseInt(data[3]);
+
+          xAxis.push(datetime.replace(" ", "\n"));
+          seriesBar.push(amount);
+          sum += amount;
+          seriesLine.push(sum);
+        });
+
+        let percentage = (sum / batch_size) * 100;
+        percentage = percentage.toFixed(2);
+        summary_machine.push({ machineName, percentage });
+
+        main_chart.setOption({
+          xAxis: [
+            {
+              type: "category",
+              data: xAxis,
+            },
+          ],
+          yAxis: [
+            {
+              name: "จำนวน",
+              min: 0,
+              max: Math.max(...seriesBar) + 20,
+            },
+            {
+              name: "จำนวนสะสม",
+              min: 0,
+              max: Math.max(...seriesLine),
+            },
+          ],
+          series: [
+            {
+              name: "จำนวน",
+              type: "bar",
+              data: seriesBar,
+            },
+            {
+              name: "จำนวนสะสม",
+              type: "line",
+              data: seriesLine,
+            },
+          ],
+        });
+
+        const startDateTime = new Date(convertDateTimeString(xAxis[0]));
+        const endDateTime = new Date(convertDateTimeString(xAxis[xAxis.length - 1]));
+
+        const timeDifference = endDateTime.getTime() - startDateTime.getTime();
+        const hours = Math.floor(timeDifference / (1000 * 60 * 60));
+        const minutes = Math.floor((timeDifference % (1000 * 60 * 60)) / (1000 * 60));
+
+        const total_minutes = Math.floor(hours * 60 + minutes);
+
+        document.getElementById("total").innerHTML = `${sum.toLocaleString()} กล่อง`;
+        document.getElementById("batch_size").innerHTML = `จากเป้า ${batch_size.toLocaleString()} กล่อง`;
+        document.getElementById("latest_information").innerHTML = `ข้อมูลล่าสุด ${xAxis[xAxis.length - 1].replace( "\n", " ")}`;
+        document.getElementById("product_name").innerHTML = `ชื่อยา: ${productName}`;
+        document.getElementById("lot").innerHTML = `เลขที่ผลิต: ${lot}`;
+        document.getElementById("period_time").innerHTML = `เวลาผ่านไปแล้ว: ${hours} ชั่วโมง ${minutes} นาที`;
+
+        const lastNumbers = seriesBar.slice(-10);
+        const sumLastNumbers = lastNumbers.reduce((accumulator, currentValue) => accumulator + currentValue);
+        const total_average = Math.round(sumLastNumbers / (lastNumbers.length * 5));
+
+        document.getElementById("average").innerHTML = `เฉลี่ย: ${total_average} กล่อง/นาที `;
+
+        const time_finish = Math.floor((batch_size - sum) / total_average);
+        const hours_finish =  Math.floor(time_finish / 60);
+        const minutes_finish = Math.floor(time_finish - (hours_finish * 60));
+        document.getElementById("time_finish").innerHTML = `จะเสร็จในอีก (โดยประมาณ) ${hours_finish} ชั่วโมง ${minutes_finish} นาที`;
+        
+
+        // machine_list.forEach((li) => {
+        //   li.classList.remove("machine-active");
+        // });
+
+        // item.classList.add("machine-active");
+      }
+
+      // แปลงวันที่
+      function convertDateTimeString(dateTimeString) {
+        dateTimeString = dateTimeString.replace("\n", " ");
+        const [datePart, timePart] = dateTimeString.split(", ");
+        const [dd, mm, yyyy] = datePart.split("/");
+        const [hh, min, ss] = timePart.split(":");
+
+        return `${yyyy}-${mm}-${dd}T${hh}:${min}:${ss}`;
+      }
+
+      async function processArrayWithDelay(dataObj, delay) {
+        let index = 0;
+        let machineName, batch_size, dataArr;
+        while (true) {
+          machineName = dataObj[index].machineName;
+          batch_size = dataObj[index].batch_size;
+          dataArr = dataObj[index].dataArr;
+          
+          mainChart(machineName, batch_size, dataArr);
+          await new Promise((resolve) => setTimeout(resolve, delay));
+
+          index++;
+
+          if (index >= dataObj.length) {
+            main_container.style.display = "none";
+            summary_container.style.display = "block";
+            console.log(summary_machine);
+            await summary(delay);
+            summary_machine = [];
+            index = 0;
+            dataObj = dataObj2
+          }
+        }
+      }
+
+      processArrayWithDelay(dataObj, 5000);
+
+      // setInterval(function() {
+      //   google.script.run.withSuccessHandler((result) => {
+      //     dataObj = result;
+      //   }).getData();
+      // }, 60000)
+    </script>
+
+    <script type="text/javascript">
+      let score = 0;
+      async function summary(delay) {
+        let yAxis_data = [];
+        let series_data = [];
+
+        summary_machine.forEach((mc) => {
+          yAxis_data.push(mc.machineName);
+          series_data.push(mc.percentage);
+        });
+
+        let summary_option = {
+          visualMap: {
+            orient: "horizontal",
+            left: "center",
+            min: 0,
+            max: 100,
+            text: ["100", "0"],
+            dimension: 0,
+            inRange: {
+              color: ["#FD665F", "#FFCE34", "#65B581"],
+            },
+          },
+          grid: { containLabel: true },
+          xAxis: {
+            name: "เปอร์เซ็นต์",
+            min: 0,
+            max: 100,
+          },
+          yAxis: {
+            type: "category",
+            data: yAxis_data,
+          },
+          series: [
+            {
+              type: "bar",
+              data: series_data,
+              label: {
+                show: true,
+                position: "right",
+                fontSize: 16,
+                formatter: "ผลิตไปแล้ว \n {c|{c}} %",
+                backgroundColor: "rgb(242,242,242)",
+                borderColor: "#aaa",
+                borderWidth: 1,
+                borderRadius: 4,
+                padding: [5, 10],
+                lineHeight: 20,
+                rich: {
+                  c: {
+                    align: "center",
+                    color: "#ff8811",
+                    textBorderColor: "#000",
+                    textBorderWidth: 1,
+                    fontSize: 16,
+                  },
+                },
+              },
+            },
+          ],
+          legend: {
+            show: true,
+          },
+
+          animationDuration: 2000,
+          animationDurationUpdate: 500,
+          animationEasing: "linear",
+          animationEasingUpdate: "linear",
+        };
+
+        summary_chart.setOption(summary_option);
+
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+
+        main_container.style.display = "block";
+        summary_container.style.display = "none";
+      }
+    </script>
+  </body>
+</html>
