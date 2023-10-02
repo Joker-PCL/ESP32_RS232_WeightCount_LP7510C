@@ -18,8 +18,8 @@ String FirmwareVer = {
   "1.0.0"
 };
 
-#define URL_fw_Version "https://raw.githubusercontent.com/Joker-PCL/ESP32_RS232_WeightCount_LP7510C/bin_version.txt"
-#define URL_fw_Bin "https://raw.githubusercontent.com/Joker-PCL/ESP32_RS232_WeightCount_LP7510C/fw.bin"
+#define URL_fw_Version "https://raw.githubusercontent.com/Joker-PCL/ESP32_RS232_WeightCount_LP7510C/main/bin_version.txt"
+#define URL_fw_Bin "https://raw.githubusercontent.com/Joker-PCL/ESP32_RS232_WeightCount_LP7510C/main/fw.bin"
 
 // Google script ID and required credentials
 String host = "https://script.google.com/macros/s/";
