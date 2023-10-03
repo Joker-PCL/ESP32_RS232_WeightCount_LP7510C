@@ -38,9 +38,9 @@ void setup() {
   EEPROM.begin(100);
 
   // ตั้งค่าสำหรับ upload program ครั้งแรก
-  EEPROM.writeUInt(machineID_address, machineID);
-  EEPROM.writeUInt(total_address, 0);
-  EEPROM.commit();
+  // EEPROM.writeUInt(machineID_address, machineID);
+  // EEPROM.writeUInt(total_address, 0);
+  // EEPROM.commit();
 
   machineID = EEPROM.readUInt(machineID_address);
   Total = EEPROM.readUInt(total_address);
