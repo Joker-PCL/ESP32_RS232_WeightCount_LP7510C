@@ -87,8 +87,8 @@ void setup() {
   digitalWrite(LED_GREEN, LOW);
 
   // start program
-  xTaskCreatePinnedToCore(autoUpdate, "Task0", 100000, NULL, 10, &Task0, 0);
-  xTaskCreatePinnedToCore(mainLoop, "Task2", 25000, NULL, 8, &Task2, 1);
+  xTaskCreatePinnedToCore(autoUpdate, "Task0", 50000, NULL, 10, &Task0, 0);
+  xTaskCreatePinnedToCore(mainLoop, "Task1", 25000, NULL, 8, &Task1, 1);
 }
 
 void loop() {}
@@ -102,9 +102,7 @@ void mainLoop(void *val) {
     if (!min_weight && !max_weight) {
       setMinMax();
       lcd.clear();
-    }
-
-    if (!scr_main_state) {
+    } else {
       clearScreen(0);
       lcd.noBlink();
       lcd.setCursor(4, 0);
@@ -120,42 +118,42 @@ void mainLoop(void *val) {
       lcd.print("MIN:" + String(min_weight));
       lcd.setCursor(10, 2);
       lcd.print("MAX:" + String(max_weight));
+      clearScreen(3);
       lcd.setCursor(0, 3);
       lcd.print("WEIGHING: ");
-      scr_main_state = !scr_main_state;
       lcd.blink();
-    }
 
-    currentWeight = readSerial();
+      currentWeight = readSerial();
 
-    clearScreen(0);
-    lcd.setCursor(7, 0);
-    lcd.print("Wait...");
-    lcd.noBlink();
-    lcd.setCursor(0, 3);
-    lcd.print("WEIGHING: " + String(currentWeight) + " PCS");
-    Total++;
-    lcd.setCursor(0, 1);
-    lcd.print("TOTAL: " + String(Total) + " PCS");
-    EEPROM.writeUInt(total_address, Total);
-    EEPROM.commit();
-    delay(200);
+      clearScreen(0);
+      lcd.setCursor(7, 0);
+      lcd.print("Wait...");
+      lcd.noBlink();
+      lcd.setCursor(0, 3);
+      lcd.print("WEIGHING: " + String(currentWeight) + " KG.");
+      Total++;
+      lcd.setCursor(0, 1);
+      lcd.print("TOTAL: " + String(Total) + " PCS");
+      EEPROM.writeUInt(total_address, Total);
+      EEPROM.commit();
+      delay(200);
 
-    if (current_weight >= min_weight || current_weight <= max_weight) {
-      count++;
-      Serial.println("Passed: " + String(currentWeight) + " PCS");
-      clearScreen(3);
-      lcd.setCursor(7, 3);
-      lcd.print("PASSED");
-      digitalWrite(LED_GREEN, HIGH);
-      passed_previousTime = millis();
-    } else {
-      countNC++;
-      Serial.println("Fail: " + String(currentWeight) + " PCS");
-      clearScreen(3);
-      lcd.setCursor(4, 3);
-      lcd.print("<< FAILED >>");
-      alert();
+      if (current_weight >= min_weight && current_weight <= max_weight) {
+        count++;
+        Serial.println("Passed: " + String(currentWeight) + " KG.");
+        clearScreen(3);
+        lcd.setCursor(7, 3);
+        lcd.print("PASSED");
+        digitalWrite(LED_GREEN, HIGH);
+        passed_previousTime = millis();
+      } else {
+        countNC++;
+        Serial.println("Fail: " + String(currentWeight) + " KG.");
+        clearScreen(3);
+        lcd.setCursor(4, 3);
+        lcd.print("<< FAILED >>");
+        alert();
+      }
     }
   }
 }
@@ -203,16 +201,23 @@ String readKeypad(int col, int row) {
       delay(100);
       digitalWrite(LED_GREEN, LOW);
       if (key_cache.length() <= 4 && _key != "A" && _key != "B" && _key != "C" && _key != "D") {
-        key_cache += String(_key);
-        lcd.setCursor(col + index, row);
-        lcd.print(key_cache[index]);
-        index++;
+        if (key_cache.indexOf(".") == -1) {
+          key_cache += String(_key);
+          lcd.setCursor(col + index, row);
+          lcd.print(key_cache[index]);
+          index++;
+        } else if (_key != ".") {
+          key_cache += String(_key);
+          lcd.setCursor(col + index, row);
+          lcd.print(key_cache[index]);
+          index++;
+        }
       } else if (_key == "D" && index > 0) {
         lcd.noBlink();
         key_cache = key_cache.substring(0, key_cache.length() - 1);
         index -= 1;
         lcd.setCursor((col + index), row);
-        lcd.print(key_cache[index]);
+        lcd.print(key_cache[index] + " ");
         lcd.setCursor((col + index), row);
         lcd.blink();
       } else if (_key == "C") {
@@ -236,7 +241,7 @@ float readSerial() {
     }
 
     //  check Serial Data cache
-    if (Serial2.available()) {
+    if (Serial2.available() > 0) {
       String readRS232 = Serial2.readString();
 
       // แยกข้อความด้วย \n
@@ -258,11 +263,15 @@ float readSerial() {
       data.trim();
 
       float current_weight = data.toFloat();
-      digitalWrite(BUZZER, HIGH);
-      delay(100);
-      digitalWrite(BUZZER, LOW);
-      delay(100);
-      return current_weight;
+      if (current_weight > 0) {
+        digitalWrite(BUZZER, HIGH);
+        delay(100);
+        digitalWrite(BUZZER, LOW);
+        delay(100);
+        return current_weight;
+      } else {
+        continue;
+      }
     }
   }
 }

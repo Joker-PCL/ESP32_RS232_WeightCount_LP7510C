@@ -90,7 +90,6 @@ void IRAM_ATTR isr() {
 
 void firmwareUpdate(String version) {
   vTaskDelete(Task1);
-  vTaskDelete(Task2);
 
   if (count > 0)
     sendToCloud();
