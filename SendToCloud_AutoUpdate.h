@@ -7,7 +7,7 @@ unsigned long previousMillis = 0;  // will store last time LED was updated
 unsigned long previousMillis_2 = 0;
 unsigned long previousMillis_3 = 0;
 const long interval_update = 900000;       // check up date 15 min
-const long interval_sendTocloud = 300000;  // send data 5 min
+const long interval_sendTocloud = 60000;  // send data 5 min
 const long mini_interval = 1000;
 
 struct Button {
