@@ -2,7 +2,6 @@
 #include <HTTPUpdate.h>
 #include <WiFiClientSecure.h>
 #include "cert.h"
-#include "time.h"
 
 unsigned long previousMillis = 0;  // will store last time LED was updated
 unsigned long previousMillis_2 = 0;
@@ -23,29 +22,9 @@ Button button_boot = {
   false
 };
 
-/*void IRAM_ATTR isr(void* arg) {
-    Button* s = static_cast<Button*>(arg);
-    s->numberKeyPresses += 1;
-    s->pressed = true;
-}*/
 
 void sendToCloud() {
   if (WiFi.status() == WL_CONNECTED) {
-    static bool flag = false;
-    struct tm timeinfo;
-
-    // Get current time
-    if (!getLocalTime(&timeinfo)) {
-      Serial.println("Failed to obtain time");
-      return;
-    }
-
-    strftime(timeStringBuff, sizeof(timeStringBuff), "%A, %B %d %Y %H:%M:%S", &timeinfo);
-    String asString(timeStringBuff);
-    asString.replace(" ", "-");
-    Serial.print("Time:");
-    Serial.println(asString);
-
     // This will send the request to the server
     String url = host + GOOGLE_SCRIPT_ID + "/exec?";
     url += "machineID=" + String(machineID);
@@ -80,7 +59,7 @@ void sendToCloud() {
     http.end();
   }
 
-  delay(2000);
+  delay(500);
 }
 
 void IRAM_ATTR isr() {
@@ -181,7 +160,7 @@ void repeatedCall() {
     FirmwareVersionCheck();
   }
 
-  if ((currentMillis - previousMillis_2) >= interval_sendTocloud && count > 0) {
+  if ((currentMillis - previousMillis_2) >= interval_sendTocloud) {
     previousMillis_2 = currentMillis;
     sendToCloud();
   }
@@ -223,8 +202,6 @@ void autoUpdate(void* val) {
   Serial.println("IP address:");
   Serial.println(WiFi.localIP());
 
-  // Init and get the time
-  configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
   FirmwareVersionCheck();
   delay(1000);
 

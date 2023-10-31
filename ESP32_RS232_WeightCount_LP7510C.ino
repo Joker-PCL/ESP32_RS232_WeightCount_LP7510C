@@ -53,16 +53,15 @@ void setup() {
     wifiMulti.addAP(ssidArray[i], password);
   }
 
-  pinMode(LED_STATUS, OUTPUT);
-  pinMode(LED_RED, OUTPUT);
-  pinMode(LED_GREEN, OUTPUT);
-  pinMode(BUZZER, OUTPUT);
+  const char OUTPUT_CNT = 5;
+  const int OUTPUT_CH[OUTPUT_CNT] = { LED_STATUS, SPARE, BUZZER, LED_RED, LED_GREEN };
+  for (int i = 0; i < OUTPUT_CNT; i++)
+    pinMode(OUTPUT_CH[i], OUTPUT);
 
-  const int test_output[3] = { BUZZER, LED_RED, LED_GREEN };
-  for (int i = 0; i < 3; i++) {
-    digitalWrite(test_output[i], HIGH);
+  for (int i = 0; i < OUTPUT_CNT; i++) {
+    digitalWrite(OUTPUT_CH[i], HIGH);
     delay(200);
-    digitalWrite(test_output[i], LOW);
+    digitalWrite(OUTPUT_CH[i], LOW);
   };
 
   digitalWrite(LED_STATUS, LOW);
@@ -88,19 +87,22 @@ void setup() {
 
   // start program
   xTaskCreatePinnedToCore(autoUpdate, "Task0", 50000, NULL, 10, &Task0, 0);
-  xTaskCreatePinnedToCore(mainLoop, "Task1", 25000, NULL, 8, &Task1, 1);
+  xTaskCreatePinnedToCore(mainLoop, "Task1", 5000, NULL, 9, &Task1, 1);
 }
 
 void loop() {}
 
+bool checkDeviceState = false;
+bool total_update = false;
 float current_weight;
 float min_weight;
 float max_weight;
-bool scr_main_state = false;
 void mainLoop(void *val) {
   for (;;) {
     if (!min_weight && !max_weight) {
       setMinMax();
+      Serial.print("MIN: " + String(min_weight));
+      Serial.println(" MAX: " + String(max_weight));
       lcd.clear();
     } else {
       clearScreen(0);
@@ -123,37 +125,161 @@ void mainLoop(void *val) {
       lcd.print("WEIGHING: ");
       lcd.blink();
 
-      currentWeight = readSerial();
+      current_weight = readSerial();
 
-      clearScreen(0);
-      lcd.setCursor(7, 0);
-      lcd.print("Wait...");
-      lcd.noBlink();
-      lcd.setCursor(0, 3);
-      lcd.print("WEIGHING: " + String(currentWeight) + " KG.");
-      Total++;
-      lcd.setCursor(0, 1);
-      lcd.print("TOTAL: " + String(Total) + " PCS");
+      if (current_weight) {
+        clearScreen(0);
+        lcd.setCursor(7, 0);
+        lcd.print("Wait...");
+        lcd.noBlink();
+        lcd.setCursor(0, 3);
+        lcd.print("WEIGHING: " + String(current_weight) + " KG.");
+        Total++;
+        lcd.setCursor(0, 1);
+        lcd.print("TOTAL: " + String(Total) + " PCS");
+        EEPROM.writeUInt(total_address, Total);
+        EEPROM.commit();
+        delay(500);
+
+        Serial.print("MIN: " + String(min_weight));
+        Serial.print(" MAX: " + String(max_weight));
+        Serial.println(" CURRENT: " + String(current_weight));
+
+        if (current_weight >= min_weight && current_weight <= max_weight) {
+          count++;
+          Serial.println("Passed: " + String(current_weight) + " KG.");
+          clearScreen(3);
+          lcd.setCursor(7, 3);
+          lcd.print("PASSED");
+          digitalWrite(LED_GREEN, HIGH);
+          passed_previousTime = millis();
+        } else {
+          countNC++;
+          Serial.println("Fail: " + String(current_weight) + " KG.");
+          clearScreen(3);
+          lcd.setCursor(4, 3);
+          lcd.print("<< FAILED >>");
+          alert();
+        }
+      } else {
+        continue;
+      }
+    }
+  }
+}
+
+void checkDevice() {
+  unsigned long previousMillis1 = 0;
+  unsigned long previousMillis2 = 0;
+  bool ledState = false;
+  String serialMonitor;
+  String serialMonitor_cache;
+
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("WiFi: NULL");
+  lcd.setCursor(0, 1);
+  lcd.print("RSSI: NULL");
+  lcd.setCursor(0, 2);
+  lcd.print("Sensor: ");
+  lcd.setCursor(0, 3);
+  lcd.print("RS232: NULL");
+
+  while (true) {
+    if (WiFi.status() == WL_CONNECTED) {
+      lcd.setCursor(6, 0);
+      lcd.print(WiFi.SSID());
+      lcd.setCursor(6, 1);
+      int rssi = WiFi.RSSI();
+      if (rssi >= -50) {
+        lcd.print("Excellent");
+      } else if (rssi >= -70) {
+        lcd.print("Good     ");
+      } else {
+        lcd.print("Weak     ");
+      }
+
+      digitalWrite(LED_RED, LOW);
+      if (millis() - previousMillis1 >= 1000) {
+        previousMillis1 = millis();  // บันทึกค่าเวลาปัจจุบัน
+        if (ledState) {
+          digitalWrite(LED_GREEN, HIGH);
+        } else {
+          digitalWrite(LED_GREEN, LOW);
+        }
+
+        ledState = !ledState;
+      }
+    } else {
+      digitalWrite(LED_GREEN, LOW);
+      lcd.setCursor(6, 0);
+      lcd.print("NULL        ");
+      lcd.setCursor(6, 1);
+      lcd.print("NULL        ");
+      if (millis() - previousMillis1 >= 1000) {
+        previousMillis1 = millis();  // บันทึกค่าเวลาปัจจุบัน
+        if (ledState) {
+          digitalWrite(LED_RED, HIGH);
+        } else {
+          digitalWrite(LED_RED, LOW);
+        }
+
+        ledState = !ledState;
+      }
+    }
+
+    if (Serial2.available() > 0) {
+      lcd.setCursor(7, 3);
+      lcd.print("OK  ");
+    } else {
+      lcd.setCursor(7, 3);
+      lcd.print("null");
+    }
+
+    Serial2.read();
+
+    char key = keypad.getKey();
+    if (key) {
+      lcd.clear();
+      digitalWrite(LED_GREEN, LOW);
+      digitalWrite(LED_RED, LOW);
+      checkDeviceState = true;
+      break;
+    }
+  }
+}
+
+void checkKeypad() {
+  char key = keypad.getKey();
+  String _key = String(key);
+  if (key) {
+    digitalWrite(BUZZER, HIGH);
+    delay(100);
+    digitalWrite(BUZZER, LOW);
+
+    if (_key == "A") {
+      Serial.println("Check device!");
+      checkDevice();
+    } else if (_key == "B") {
+      Serial.println("Set min-max weight!");
+      min_weight = 0;
+      max_weight = 0;
+    } else if (_key == "C") {
+      Serial.println("Reset Counter>>");
+      Total = 0;
       EEPROM.writeUInt(total_address, Total);
       EEPROM.commit();
-      delay(200);
+      total_update = true;
+    } else if (_key == "D" && Total > 0) {
+      Serial.println("Total,Count -1");
+      Total--;
+      EEPROM.writeUInt(total_address, Total);
+      EEPROM.commit();
+      Serial.println("TOTAL: " + String(Total) + " PCS");
+      total_update = true;
 
-      if (current_weight >= min_weight && current_weight <= max_weight) {
-        count++;
-        Serial.println("Passed: " + String(currentWeight) + " KG.");
-        clearScreen(3);
-        lcd.setCursor(7, 3);
-        lcd.print("PASSED");
-        digitalWrite(LED_GREEN, HIGH);
-        passed_previousTime = millis();
-      } else {
-        countNC++;
-        Serial.println("Fail: " + String(currentWeight) + " KG.");
-        clearScreen(3);
-        lcd.setCursor(4, 3);
-        lcd.print("<< FAILED >>");
-        alert();
-      }
+      if (count > 0)
+        count--;
     }
   }
 }
@@ -179,10 +305,13 @@ void setMinMax() {
     lcd.print("     ");
     min_weight_str = readKeypad(4, 3);
 
-    if (min_weight_str == "")
+    if (min_weight_str == "") {
       continue;
-    else
+    } else {
       max_weight_str = readKeypad(14, 3);
+      if (max_weight_str.toFloat() < min_weight_str.toFloat())
+        max_weight_str = "";
+    }
   }
 
   min_weight = min_weight_str.toFloat();
@@ -197,9 +326,9 @@ String readKeypad(int col, int row) {
     char key = keypad.getKey();
     String _key = String(key);
     if (key) {
-      digitalWrite(LED_GREEN, HIGH);
+      digitalWrite(BUZZER, HIGH);
       delay(100);
-      digitalWrite(LED_GREEN, LOW);
+      digitalWrite(BUZZER, LOW);
       if (key_cache.length() <= 4 && _key != "A" && _key != "B" && _key != "C" && _key != "D") {
         if (key_cache.indexOf(".") == -1) {
           key_cache += String(_key);
@@ -234,10 +363,24 @@ String readKeypad(int col, int row) {
 // read SerialPort RS232
 float readSerial() {
   Serial.println("ReadSerialPort>>");
+  checkDeviceState = false;
 
-  while (true) {
+  while (min_weight && max_weight && !checkDeviceState) {
     if ((millis() - passed_previousTime) > 500) {
       digitalWrite(LED_GREEN, LOW);
+    }
+
+    // update screen
+    if (total_update) {
+      lcd.noBlink();
+      String Total_SCR = "TOTAL: " + String(Total) + " PCS";
+      while (Total_SCR.length() < 20) Total_SCR += " ";
+
+      lcd.setCursor(0, 1);
+      lcd.print(Total_SCR);
+      total_update = false;
+      lcd.setCursor(10, 3);
+      lcd.blink();
     }
 
     //  check Serial Data cache
@@ -261,19 +404,24 @@ float readSerial() {
       data.replace("Gross", "");
       data.replace("kg", "");
       data.trim();
+      Serial.println("CURRENT WEIGHT: " + String(data));
 
-      float current_weight = data.toFloat();
-      if (current_weight > 0) {
+      float currentWeight = data.toFloat();
+      if (currentWeight > 0) {
         digitalWrite(BUZZER, HIGH);
         delay(100);
         digitalWrite(BUZZER, LOW);
         delay(100);
-        return current_weight;
+        return currentWeight;
       } else {
         continue;
       }
+    } else {
+      checkKeypad();
     }
   }
+
+  return 0.00;
 }
 
 void onLoad() {

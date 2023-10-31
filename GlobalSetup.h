@@ -15,7 +15,7 @@ const char* ssidArray[] = {"pcl_plant1", "pcl_plant2",  "pcl_plant3", "pcl_plant
 const char* password = "plant172839";
 
 String FirmwareVer = {
-  "1.0.0"
+  "1.0.1"
 };
 
 #define URL_fw_Version "https://raw.githubusercontent.com/Joker-PCL/ESP32_RS232_WeightCount_LP7510C/main/bin_version.txt"
@@ -30,6 +30,7 @@ const int LED_STATUS = 2;
 const int LED_RED = 25;
 const int LED_GREEN = 26;
 const int BUZZER = 33;
+const int SPARE = 32;
 
 unsigned int currentTime = 0;  // time stamp millis()
 
@@ -41,8 +42,6 @@ unsigned int Total = 0;  // total
 unsigned int count = 0;  // cache count
 unsigned int countNC = 0;  // cache count
 
-float currentWeight = 0;  // cache weight
-
 unsigned long pressTime_countReset = 0;
 
 // Set the LCD address to 0x27 for a 16 chars and 2 line display
@@ -51,8 +50,8 @@ LiquidCrystal_I2C lcd(0x27, 20, 4);
 /* Keypad setup */
 const byte KEYPAD_ROWS = 4;
 const byte KEYPAD_COLS = 4;
-byte rowPins[KEYPAD_ROWS] = {5, 18, 19, 4};
-byte colPins[KEYPAD_COLS] = {13, 12, 14, 27};
+byte rowPins[KEYPAD_ROWS] = {13, 12, 14, 27};
+byte colPins[KEYPAD_COLS] = {5, 18, 19, 4};
 char keys[KEYPAD_ROWS][KEYPAD_COLS] = {
   {'1', '2', '3', 'A'},
   {'4', '5', '6', 'B'},
