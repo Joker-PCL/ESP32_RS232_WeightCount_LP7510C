@@ -15,7 +15,7 @@ const char* ssidArray[] = {"pcl_plant1", "pcl_plant2",  "pcl_plant3", "pcl_plant
 const char* password = "plant172839";
 
 String FirmwareVer = {
-  "1.0.1"
+  "1.0.2"
 };
 
 #define URL_fw_Version "https://raw.githubusercontent.com/Joker-PCL/ESP32_RS232_WeightCount_LP7510C/main/bin_version.txt"
@@ -41,6 +41,9 @@ int total_address = 10;  // total address EEPROM
 unsigned int Total = 0;  // total
 unsigned int count = 0;  // cache count
 unsigned int countNC = 0;  // cache count
+float current_weight;
+float min_weight;
+float max_weight;
 
 unsigned long pressTime_countReset = 0;
 

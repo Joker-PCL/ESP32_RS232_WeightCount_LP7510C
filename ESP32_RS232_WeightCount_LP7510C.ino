@@ -94,9 +94,6 @@ void loop() {}
 
 bool checkDeviceState = false;
 bool total_update = false;
-float current_weight;
-float min_weight;
-float max_weight;
 void mainLoop(void *val) {
   for (;;) {
     if (!min_weight && !max_weight) {

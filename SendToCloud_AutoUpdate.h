@@ -50,7 +50,7 @@ void sendToCloud() {
     if (httpCode == 200) {
       String payload = http.getString();
       Serial.println("Payload: " + payload);
-      count = 0;  // Reset count
+      count = 0;    // Reset count
       countNC = 0;  // Reset count
     } else {
       Serial.println("Failed to connect to the server");
@@ -162,7 +162,8 @@ void repeatedCall() {
 
   if ((currentMillis - previousMillis_2) >= interval_sendTocloud) {
     previousMillis_2 = currentMillis;
-    sendToCloud();
+    if (min_weight && max_weight)
+      sendToCloud();
   }
 
   // if ((currentMillis - previousMillis_3) >= mini_interval) {
