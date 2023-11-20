@@ -207,11 +207,11 @@ void autoUpdate(void* val) {
   delay(1000);
 
   for (;;) {
-    if (button_boot.pressed) {  //to connect wifi via Android esp touch app
-      Serial.println("Firmware update Starting..");
-      firmwareUpdate("<x>");
-      button_boot.pressed = false;
-    }
+    // if (button_boot.pressed) {  //to connect wifi via Android esp touch app
+    //   Serial.println("Firmware update Starting..");
+    //   firmwareUpdate("<x>");
+    //   button_boot.pressed = false;
+    // }
 
     while (wifiMulti.run() != WL_CONNECTED) {
       digitalWrite(LED_STATUS, HIGH);
